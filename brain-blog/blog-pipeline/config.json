@@ -1,0 +1,26 @@
+{
+  "repo": {
+    "localPath": "",
+    "remoteUrl": "",
+    "remoteBranch": "main",
+    "ghPagesBranch": "gh-pages"
+  },
+  "blog": {
+    "title": "",
+    "description": "",
+    "author": "",
+    "baseUrl": ""
+  },
+  "pipeline": {
+    "pollingIntervalMinutes": 15,
+    "emailPrefix": "brain:",
+    "imagesEnabled": true,
+    "autoDeploy": false,
+    "reviewRequired": true,
+    "llmModel": "ollama/qwen3.6:latest"
+  },
+  "config": {
+    "lastUpdated": "2026-05-23",
+    "version": "1.0.0"
+  }
+}
