@@ -1,0 +1,96 @@
+## Run Windows WSL inside WebStorm 2026.1 — Step‑by‑step
+
+Assumptions: you have Windows 10/11 with WSL2 installed and a Linux distro (e.g., Ubuntu) available. If not, steps below include WSL setup. Replace distro and paths with your choices.
+
+1. Install or update WSL (if needed)
+   1. Open an elevated PowerShell and run:
+      ```
+      wsl --install
+      ```
+      (or, if WSL already installed, update: `wsl --update` and set WSL2 default: `wsl --set-default-version 2`)
+   2. Install a distro (e.g., Ubuntu) from Microsoft Store or:
+      ```
+      wsl --install -d ubuntu
+      ```
+   3. Launch the distro once to complete initial setup (create username/password).
+
+2. Install required Linux tooling inside WSL
+   1. Open your WSL distro terminal.
+   2. Update packages:
+      ```
+      sudo apt update && sudo apt upgrade -y
+      ```
+   3. Install essentials used by WebStorm projects (example for Node.js/JavaScript development):
+      ```
+      sudo apt install -y curl git build-essential
+      ```
+   4. Install Node.js (recommended with nvm):
+      ```
+      curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.5/install.sh | bash
+      source ~/.bashrc
+      nvm install --lts
+      ```
+   5. Verify installations:
+      ```
+      node -v
+      npm -v
+      git --version
+      ```
+
+3. Install and open WebStorm 2026.1 on Windows
+   - Install or update to WebStorm 2026.1 on Windows normally.
+   - Launch WebStorm.
+
+4. Enable WSL integration in WebStorm
+   1. Open Settings/Preferences:
+      - Windows: File > Settings
+      - Or press Ctrl+Alt+S
+   2. Go to Tools > Terminal:
+      - Set Shell path to your WSL shell (optional): `wsl.exe` or `C:\Windows\System32\wsl.exe`
+      - Click Apply.
+   3. Go to Project Settings > Platform Settings > SSH/WSL (or: Tools > WSL) — exact path in 2026.1 UI:
+      - If there’s a dedicated WSL section, confirm WebStorm detected installed WSL distros.
+      - If not present, proceed via Node/SDK configuration below.
+
+5. Configure project SDK/toolchains to use WSL (Node example)
+   1. Open Settings/Preferences (Ctrl+Alt+S) > Languages & Frameworks > Node.js (or Languages & Frameworks > Node.js and NPM).
+   2. Click the three-dot button to add an interpreter.
+   3. Choose “Add Remote Interpreter” → “WSL” (or “WSL: <your-distro>”).
+   4. WebStorm will detect Node interpreters installed in that WSL distro. Select the Node version installed earlier (e.g., /home/<user>/.nvm/versions/node/…/bin/node).
+   5. Confirm and apply.
+
+6. Configure project files and package manager
+   1. Open your project in WebStorm (File > Open) — prefer opening the project path using the Windows path that maps to the WSL filesystem:
+      - You can open projects stored in the WSL filesystem using the \\wsl$\ distribution path (e.g., \\wsl$\Ubuntu\home\<user>\project) or use a Windows-mounted project folder that both Windows and WSL can access. Using the WSL filesystem preserves Linux permissions and is recommended.
+   2. In Settings > Languages & Frameworks > Node.js & NPM ensure the selected interpreter is the WSL one.
+   3. WebStorm will detect packages; run `npm install` / `pnpm install` / `yarn` from the WebStorm Terminal (set to WSL shell) or via package manager UI.
+
+7. Configure run/debug configurations to use WSL
+   1. Open Run > Edit Configurations.
+   2. For Node.js configurations, pick the WSL Node interpreter in the configuration’s Node interpreter field.
+   3. For other toolchains (npm, webpack, Jest, etc.) ensure the configuration uses the WSL interpreter/environment or the Terminal configured to WSL.
+
+8. Terminal and file watchers
+   - Open WebStorm Terminal (Alt+F12). It should launch WSL (wsl.exe) and inherit your distro environment.
+   - File watchers, linters, and formatters should use the WSL tooling if their path is the WSL interpreter or if configured to run via the WSL terminal.
+
+9. Git in WSL
+   - Use Git installed in WSL for repository operations to keep file permissions sane.
+   - In Settings > Version Control > Git, set Path to Git executable to the WSL Git (WebStorm usually lists something like WSL: /usr/bin/git). Test connection.
+
+10. Docker (if used) with WSL2
+    - If you use Docker Desktop with WSL2 integration, ensure Docker is enabled for your distro.
+    - In WebStorm Settings > Build, Execution, Deployment > Docker, add Docker using TCP socket or Docker Desktop; WebStorm can connect to the Docker engine exposed by Docker Desktop/WSL2.
+
+11. Troubleshooting tips (quick)
+   - If WebStorm can’t detect WSL interpreters: restart WebStorm, ensure WSL is running, and distro is installed.
+   - If file watching or permissions misbehave: prefer keeping the project inside the WSL filesystem (\\wsl$\...) rather than a Windows-mounted drive.
+   - If node modules fail to run: ensure native binaries are built for Linux (install in WSL, not Windows).
+
+12. Quick verification
+   1. Open Terminal inside WebStorm — confirm `uname -a` or `lsb_release -a` returns your Linux distro.
+   2. Run `node -v` and `npm run start` (or your project start command) from WebStorm run configuration; app should run using WSL interpreter.
+
+If you want, I can produce exact menu screenshots or a condensed checklist tailored for a Node/React, Python, or Java project — tell me which and I’ll create it.
+
+(Related search suggestions provided.)
