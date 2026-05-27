@@ -4,11 +4,13 @@ description: "Thoughts, photos, and the weird stuff in between."
 baseurl: "/brain"
 url: "https://sunnycentered.github.io"
 
-# Posts live in this directory (relative to _config.yml)
-source: .
+# Source is the blog-pipeline directory (GitHub Pages looks for _config.yml at repo root)
+source: blog-pipeline
+
+# Build output
 destination: _site
 
-# Default layout for posts
+# Default layout for all posts
 defaults:
   - scope:
       path: "_posts"
@@ -27,7 +29,8 @@ plugins:
 
 # Exclude from build
 exclude:
-  - prompts
-  - state
-  - logs
+  - blog-pipeline/prompts
+  - blog-pipeline/state
+  - blog-pipeline/logs
+  - README.md
   - config.json
