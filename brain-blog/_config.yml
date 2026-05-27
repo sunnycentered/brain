@@ -1,0 +1,34 @@
+# Jekyll configuration for GitHub Pages
+title: "Brain Blog"
+description: "Thoughts, photos, and the weird stuff in between."
+baseurl: "/brain"
+url: "https://sunnycentered.github.io"
+
+# Source and destination
+source: blog-pipeline
+destination: _site
+
+# Posts
+defaults:
+  - scope:
+      path: "_posts"
+      type: posts
+    values:
+      layout: post
+
+# Markdown
+markdown: kramdown
+
+# Plugins (GitHub Pages supports these)
+plugins:
+  - jekyll-paginate
+  - jekyll-seo-tag
+  - jekyll-gist
+
+# Exclude
+exclude:
+  - blog-pipeline/prompts
+  - blog-pipeline/state
+  - blog-pipeline/logs
+  - README.md
+  - config.json
