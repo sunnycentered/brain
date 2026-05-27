@@ -1,7 +1,7 @@
 {
   "repo": {
     "localPath": "",
-    "remoteUrl": "",
+    "remoteUrl": "https://github.com/sunnycentered/brain.git",
     "remoteBranch": "main",
     "ghPagesBranch": "gh-pages"
   },
