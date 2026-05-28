@@ -13,6 +13,9 @@ source: blog-pipeline
 # Build output (will be deployed by GitHub Pages)
 destination: _site
 
+# Disable GitHub's default theme — we have our own layout
+theme: null
+
 # Default layout for all posts
 defaults:
   - scope:
