@@ -1,13 +1,16 @@
 # Jekyll configuration for GitHub Pages
+# Deployed to: https://sunnycentered.github.io/brain/
 title: "Brain Blog"
 description: "Thoughts, photos, and the weird stuff in between."
-baseurl: "/brain"
-url: "https://sunnycentered.github.io"
 
-# Source is the blog-pipeline directory (GitHub Pages looks for _config.yml at repo root)
+# Project site (not a user site) — baseurl includes the repo name
+url: "https://sunnycentered.github.io"
+baseurl: "/brain"
+
+# Source directory (relative to repo root)
 source: blog-pipeline
 
-# Build output
+# Build output (will be deployed by GitHub Pages)
 destination: _site
 
 # Default layout for all posts
@@ -34,3 +37,4 @@ exclude:
   - blog-pipeline/logs
   - README.md
   - config.json
+  - _posts
