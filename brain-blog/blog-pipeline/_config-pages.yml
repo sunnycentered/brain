@@ -1,0 +1,13 @@
+# Jekyll configuration for GitHub Pages
+# Deployed to: https://sunnycentered.github.io/brain/
+# Note: This is an artifact-only config. The actual site content lives in
+# the /brain-blog/_site/ directory, which is built by the GitHub Action.
+
+# DO NOT use this config to build during the action.
+# The action already builds and uploads _site as the deployment artifact.
+
+theme: null
+title: "Brain Blog"
+description: "Thoughts, photos, and the weird stuff in between."
+url: "https://sunnycentered.github.io"
+baseurl: "/brain"
