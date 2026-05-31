@@ -1,7 +1,7 @@
 const { execFile } = require('child_process');
 
 const OLLAMA_CMD = process.env.OLLAMA_CMD || 'ollama';
-const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'llama2';
+const DEFAULT_MODEL = process.env.OLLAMA_MODEL || 'qwen3.6';
 
 // A very small wrapper that runs a prompt through the local ollama CLI.
 function runPrompt(prompt, model = DEFAULT_MODEL, timeoutMs = 20000) {
