@@ -7,8 +7,6 @@ on:
 
 permissions:
   contents: write
-  pages: write
-  id-token: write
 
 jobs:
   build:
@@ -16,35 +14,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
           ruby-version: '3.2'
           bundler-cache: true
+          working-directory: blog-pipeline
 
-      - name: Install Jekyll dependencies
-        run: |
-          cd blog-pipeline
-          bundle install
+      - name: Install Jekyll
+        run: bundle install
+        working-directory: blog-pipeline
 
       - name: Build Jekyll site
         run: |
-          cd blog-pipeline
-          bundle exec jekyll build --destination ../_site --baseurl "/brain"
+          bundle exec jekyll build --destination ../_site
+        working-directory: blog-pipeline
 
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: _site
-
-  deploy:
-    needs: build
-    runs-on: ubuntu-latest
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          publish_branch: gh-pages
