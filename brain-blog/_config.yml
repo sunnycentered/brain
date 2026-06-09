@@ -32,7 +32,6 @@ plugins:
   - jekyll-paginate
   - jekyll-seo-tag
   - jekyll-gist
-  - jekyll-feed
 
 # Exclude from build
 exclude:
