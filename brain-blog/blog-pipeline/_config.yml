@@ -1,0 +1,27 @@
+# Jekyll configuration for GitHub Pages
+# Deployed to: https://sunnycentered.github.io/brain/
+title: "Brain Blog"
+description: "Thoughts, photos, and the weird stuff in between."
+url: "https://sunnycentered.github.io"
+baseurl: "/brain"
+
+theme: null
+
+# Default layout for all posts
+defaults:
+  - scope:
+      path: "_posts"
+      type: posts
+    values:
+      layout: post
+
+markdown: kramdown
+
+exclude:
+  - prompts
+  - state
+  - logs
+  - README.md
+  - config.json
+  - Gemfile
+  - Gemfile.lock
