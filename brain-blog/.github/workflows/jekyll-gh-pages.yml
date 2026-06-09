@@ -24,10 +24,6 @@ jobs:
           bundler-cache: true
           working-directory: blog-pipeline
 
-      - name: Install Jekyll
-        run: bundle install
-        working-directory: blog-pipeline
-
       - name: Build Jekyll site
         run: |
           bundle exec jekyll build --destination ../_site
