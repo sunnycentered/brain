@@ -1,0 +1,114 @@
+# Digital Nomad Tech Stack Starter Pack — Product Pricing Configuration
+
+## Gumroad Product Tiers
+
+### Tier 1: Basic
+```yaml
+product:
+  name: "Digital Nomad Tech Stack Starter Pack — Basic"
+  price_usd: 19
+  tier: basic
+  description: >
+    The complete PDF guide covering connectivity, hardware, software, finance, and security. 
+    Everything you need to set up your nomad tech stack in under 2 hours.
+  includes:
+    - "Complete PDF Guide (30–35 pages)"
+    - "PDF format optimized for mobile and desktop"
+    - "Free updates via Gumroad re-download"
+  target_audience: >
+    Budget-conscious nomads who already have most tools but need a curated setup guide.
+  features:
+    - full_pdf_guide: true
+    notion_template: false
+    community_discord: false
+    future_updates: true
+    email_support: false
+```
+
+### Tier 2: Premium
+```yaml
+product:
+  name: "Digital Nomad Tech Stack Starter Pack — Premium"
+  price_usd: 39
+  tier: premium
+  description: >
+    PDF guide + fully-configured Notion workspace template with linked databases for tool tracking, budget management, and project workflow. Best value for complete setup.
+  includes:
+    - "Complete PDF Guide (30–35 pages)"
+    - "Notion Template with 4 linked databases"
+    - "Setup walkthrough video links"
+    - "Free updates via Gumroad re-download"
+  target_audience: >
+    Nomads who want a complete, ready-to-use setup system for their entire nomad operation.
+  features:
+    full_pdf_guide: true
+    notion_template: true
+    community_discord: false
+    future_updates: true
+    email_support: true
+```
+
+### Tier 3: Bundle
+```yaml
+product:
+  name: "Digital Nomad Tech Stack Starter Pack — Bundle"
+  price_usd: 59
+  tier: bundle
+  description: >
+    Everything in Premium, plus lifetime access to our Discord community and all future product updates. For nomads who want ongoing value and a network of fellow digital nomads.
+  includes:
+    - "Complete PDF Guide (30–35 pages)"
+    - "Notion Template with 4 linked databases"
+    - "Setup walkthrough video links"
+    - "Lifetime Discord community access"
+    - "All future product updates — free forever"
+    - "Priority email support"
+    - "Annual tool review refresh (new picks each year)"
+  target_audience: >
+    Power users and long-term nomads who want the complete package with ongoing community value.
+  features:
+    full_pdf_guide: true
+    notion_template: true
+    community_discord: true
+    future_updates: true
+    email_support: true
+```
+
+## Pricing Summary Table
+
+| Tier | Price | PDF Guide | Notion Template | Discord Community | Future Updates | Best For |
+|------|-------|-----------|-----------------|-------------------|---------------|----------|
+| Basic | $19 | ✅ | ❌ | ❌ | ✅ (PDF only) | Budget nomads |
+| **Premium** | **$39** | ✅ | ✅ | ❌ | ✅ (all formats) | Best value / recommended |
+| Bundle | $59 | ✅ | ✅ | ✅ | ✅ (lifetime + annual refresh) | Power users |
+
+## Psychological Pricing Notes
+- $19 — lowest common denominator for impulse digital purchases under $20
+- $39 — premium price point that signals quality while still feeling affordable; expected best-seller
+- $59 — anchor price at ~$40 above premium creates strong perceived value for the community + updates component
+
+## Payment Processing via Gumroad
+- All tiers processed through Gumroad checkout (Stripe-powered)
+- Gumroad takes 10% transaction fee on free plan or 2.9% + $0.30 on paid plans
+- Recommended: Upgrade to Gumroad Creator ($15/mo) to reduce fees and unlock custom domains
+- Payouts via Stripe bank transfer (available in 46+ countries, including Wise-linked accounts)
+
+## Refund Policy
+```yaml
+refund_policy:
+  duration_days: 30
+  conditions: "Full refund within 30 days of purchase if not satisfied"
+  contact_email: "support@yourdomain.com"
+  preview_available: true
+  preview_file: "docs/income-channel/products/starter-pack/preview-sample.md"
+```
+
+## Affiliate Revenue Projections (Monthly Estimates)
+
+| Source | Per Customer Avg. | Monthly Active Customers (est.) | Est. Monthly Revenue |
+|--------|------------------|-------------------------------|---------------------|
+| Product sales (avg $35/tier) | $35 | 50–100 customers/mo | $1,750–$3,500 |
+| Affiliate commissions (ExpressVPN, Airalo, Wise, etc.) | ~$8/customer/yr = ~$0.67/mo | same base | $33–$67 |
+| **Total est. monthly** | | | **$1,783–$3,567** |
+
+> 📊 These are conservative estimates based on similar Gumroad products in the education/tech niche. Actual results depend on marketing effort and channel reach.
