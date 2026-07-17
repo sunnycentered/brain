@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  @DigitalNomadTech Bot Icon — SVG Source
+  Dimensions: 640x640 (Telegram bot profile image)
+  Export to PNG at 640x640 or scale down as needed.
+  Colors: Gradient #0EA5E9 -> #6366F1 -> #8B5CF6 (135 degrees)
+-->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 640" width="640" height="640">
+  <defs>
+    <!-- Brand gradient: Sky Blue → Indigo → Purple at 135 degrees -->
+    <linearGradient id="brandGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0EA5E9"/>
+      <stop offset="50%"  stop-color="#6366F1"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background: full gradient square -->
+  <rect width="640" height="640" fill="url(#brandGradient)"/>
+
+  <!-- Wireframe Globe -->
+  <g stroke="#FFFFFF" fill="none" opacity="0.95">
+    <!-- Globe outline circle -->
+    <circle cx="320" cy="320" r="170" stroke-width="4"/>
+
+    <!-- Horizontal meridian (equator) -->
+    <line x1="150" y1="320" x2="490" y2="320" stroke-width="3"/>
+
+    <!-- Vertical meridian -->
+    <line x1="320" y1="150" x2="320" y2="490" stroke-width="3"/>
+
+    <!-- Diagonal X cross-hatch (tech feel) -->
+    <line x1="199.7" y1="199.7" x2="440.3" y2="440.3" stroke-width="2.5"/>
+    <line x1="199.7" y1="440.3" x2="440.3" y2="199.7" stroke-width="2.5"/>
+  </g>
+
+  <!-- Circuit Traces (4 cardinal directions) -->
+  <g stroke="#FFFFFF" fill="none" opacity="0.85" stroke-linecap="round">
+    <!-- North trace -->
+    <polyline points="320,150 320,75 308,63" stroke-width="3"/>
+    <!-- South trace -->
+    <polyline points="320,490 320,565 308,577" stroke-width="3"/>
+    <!-- East trace -->
+    <polyline points="490,320 565,320 577,308" stroke-width="3"/>
+    <!-- West trace -->
+    <polyline points="150,320 75,320 63,308" stroke-width="3"/>
+  </g>
+
+  <!-- Circuit Nodes (end dots) -->
+  <g fill="#FFFFFF" opacity="0.9">
+    <circle cx="308" cy="63"  r="7"/>
+    <circle cx="308" cy="577" r="7"/>
+    <circle cx="577" cy="308" r="7"/>
+    <circle cx="63"  cy="308" r="7"/>
+  </g>
+</svg>
