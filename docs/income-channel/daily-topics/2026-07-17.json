@@ -6,10 +6,29 @@
       "rank": 1,
       "title": "Test topic",
       "source": "F1",
-      "relevanceScore": 0,
+      "pubDate": "2026-07-17T06:03:11.294Z",
+      "relevanceScore": 0.068,
       "velocityScore": 0.04,
-      "predictedEngagement": 0.48,
-      "matchedKeywords": [],
+      "predictedEngagement": 0.38,
+      "frequencyCount": 1,
+      "frequencyRatio": 1,
+      "matchedKeywords": [
+        {
+          "keyword": "nomad",
+          "category": "nomad_core",
+          "relevanceWeight": 1.5
+        },
+        {
+          "keyword": "remote work",
+          "category": "nomad_core",
+          "relevanceWeight": 1.5
+        },
+        {
+          "keyword": "visa",
+          "category": "visa",
+          "relevanceWeight": 1
+        }
+      ],
       "categories": [
         "Visas"
       ]
