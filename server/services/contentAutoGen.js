@@ -6,6 +6,7 @@
  */
 
 const { generatePostPrompt } = require('./contentGenerator');
+const path = require('path');
 
 // ── Topic queue ──────────────────────────────────────────────────────────────
 
@@ -39,7 +40,7 @@ async function processQueue() {
   const results = [];
   for (const topic of pending.slice(0, 10)) { // batch limit
     try {
-      const keywords = topic.matchedKeywords.map((k) => k.keyword).slice(0, 8);
+      const keywords = topic.matchedKeywords ? topic.matchedKeywords.map((k) => k.keyword).slice(0, 8) : [];
       const captionData = await generatePostPrompt({
         tone: 'informative',
         keywords,
@@ -61,4 +62,19 @@ function clearQueue() {
   topicQueue = [];
 }
 
-module.exports = { feedTopics, addTopicQueue, processQueue, clearQueue };
+/**
+ * getTopicsForDraft() — Integration hook for contentAutoGen pipeline.
+ * Bridges TopicResearchService trending topics into content drafts.
+ */
+async function getTopicsForDraft(maxCount = 5) {
+  try {
+    const TopicResearchService = require(path.join(__dirname, 'topicResearch.js'));
+    const topicSvc = new TopicResearchService();
+    await topicSvc.init();
+    return await topicSvc.getTopicsForDraft(maxCount);
+  } catch {
+    return [];
+  }
+}
+
+module.exports = { feedTopics, addTopicQueue, processQueue, clearQueue, getTopicsForDraft };

@@ -1,13 +1,114 @@
 {
   "feeds": [
     {
-      "id": "dead-feed",
+      "id": "remote-ok",
+      "active": true,
+      "name": "Remote OK",
+      "url": "https://remoteok.com/rss",
+      "categories": ["finance", "software"],
+      "priority": 1
+    },
+    {
+      "id": "weworkremotely",
+      "active": true,
+      "name": "We Work Remotely",
+      "url": "https://weworkremotely.com/rss.xml",
+      "categories": ["finance", "software"],
+      "priority": 1
+    },
+    {
+      "id": "nomadlist",
+      "active": true,
+      "name": "Nomad List Blog",
+      "url": "https://nomadlist.com/blog/feed.xml",
+      "categories": ["visa", "travel_tech"],
+      "priority": 1
+    },
+    {
+      "id": "digital-tours",
+      "active": true,
+      "name": "Digital Tourist",
+      "url": "https://digitourist.com/feed/",
+      "categories": ["travel_tech", "visa"],
+      "priority": 2
+    },
+    {
+      "id": "dutchnomad",
+      "active": true,
+      "name": "Digital Nomad EU",
+      "url": "https://digitalnomadeu.org/feed/",
+      "categories": ["visa", "co_working"],
+      "priority": 2
+    },
+    {
+      "id": "workfrom-vpn",
+      "active": true,
+      "name": "WorkFrom VPN Guide",
+      "url": "https://www.pcmag.com/rssfeeds/VPN",
+      "categories": ["vpn_tools", "security"],
+      "priority": 2
+    },
+    {
+      "id": "remoteworkhub",
+      "active": true,
+      "name": "Remote Work Hub",
+      "url": "https://remoteworkhub.com/feed/",
+      "categories": ["software", "ai_tools"],
+      "priority": 2
+    },
+    {
+      "id": "nomadcapitalist",
+      "active": true,
+      "name": "Nomad Capitalist",
+      "url": "https://nomadcapitalist.com/feed/",
+      "categories": ["finance", "visa"],
+      "priority": 1
+    },
+    {
+      "id": "freelancerinresidence",
+      "active": true,
+      "name": "Freelancer in Residence Blog",
+      "url": "https://freelancerin residence.com/feed/",
+      "categories": ["gear", "communication"],
+      "priority": 3
+    },
+    {
+      "id": "location-independence",
+      "active": true,
+      "name": "Location Independent Blog",
+      "url": "https://locationindependentblog.com/feed/",
+      "categories": ["travel_tech", "gear"],
+      "priority": 2
+    },
+    {
+      "id": "nomadlist-gear",
+      "active": true,
+      "name": "Nomad List Gear Guide",
+      "url": "https://www.techlab.com/blog/feed/",
+      "categories": ["gear", "security"],
+      "priority": 3
+    },
+    {
+      "id": "nomad-tech-news",
+      "active": true,
+      "name": "Digital Nomad Tech News",
+      "url": "https://www.lifewire.com/rss-2086150",
+      "categories": ["software", "ai_tools"],
+      "priority": 1
+    },
+    {
+      "id": "dead-feed-example",
       "active": false,
-      "name": "Dead Feed",
-      "url": "https://example.com/dead"
+      "name": "Dead Feed Example (inactive)",
+      "url": "https://example.com/dead-rss"
     }
   ],
   "_defaults": {
-    "deadFeedThreshold": 3
+    "feedTimeoutMs": 15000,
+    "deadFeedThreshold": 3,
+    "healthCheckIntervalHours": 6,
+    "maxDailyDigestTopics": 5,
+    "defaultCategoryWeight": 1.0,
+    "viralThresholdMultiplier": 3.0
   }
 }

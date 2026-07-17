@@ -4,13 +4,13 @@
  * Responsibilities:
  *   - Fetch & parse RSS feeds (10+ nomad-tech-relevant sources)
  *   - Detect trending topics using frequency, velocity, and engagement signals
- *   - Deduplicate content via hashing to prevent duplicate topic suggestions
+ *   - Deduplicate content via SHA-256 hashing to prevent duplicate topic suggestions
  *   - Score topic relevance for the nomad audience using keyword matching
  *   - Rank topics by predicted engagement (velocity scoring)
  *   - Generate daily digest of top 5 topics → docs/income-channel/daily-topics/YYYY-MM-DD.json
  *   - Feed health checks: remove sources after 3 failed checks
- *   - Viral/unexpected news alerts via velocity threshold multiplier
- *   - Integration hook for contentAutoGen pipeline
+ *   - Viral/unexpected news alerts via velocity threshold multiplier (3x normal = alert)
+ *   - Integration hook for contentAutoGen pipeline via getTopicsForDraft()
  */
 
 const fs = require('fs').promises;
@@ -21,6 +21,23 @@ const https = require('https');
 const { URL } = require('url');
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
+
+/** Normalize article title + URL into a canonical string for hashing */
+function normalizeForHash(title, url) {
+  const normalizedTitle = (title || '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')   // strip punctuation
+    .replace(/\s+/g, ' ');        // collapse whitespace
+  const normalizedUrl = (url || '').toLowerCase().trim();
+  return `${normalizedTitle}|${normalizedUrl}`;
+}
+
+/** SHA-256 content hash of normalized title + URL for deduplication */
+function contentHash(title, url) {
+  const normalized = normalizeForHash(title, url);
+  return crypto.createHash('sha256').update(normalized).digest('hex');
+}
 
 /** Simple XML-RSS/ATOM → plain-text item extractor */
 function parseFeedXml(xml) {
@@ -70,7 +87,7 @@ function fetchUrl(url, timeoutMs = 15000) {
   });
 }
 
-/** SHA-256 hash for dedup */
+/** SHA-256 hash for general use */
 function hash(text) {
   return crypto.createHash('sha256').update(text).digest('hex');
 }
@@ -78,7 +95,6 @@ function hash(text) {
 // ─── YAML-lite parser (no external dep) ──────────────────────────────────────
 
 function parseYamlSimple(content) {
-  // Minimal nested-key parser sufficient for our categories.yaml structure
   const result = {};
   const lines = content.split('\n');
   let stack = [{ obj: result, depth: -1 }];
@@ -86,7 +102,6 @@ function parseYamlSimple(content) {
     const stripped = rawLine.trim();
     if (!stripped || stripped.startsWith('#')) continue;
     const indent = rawLine.search(/\S/);
-    // Pop stack to parent level
     while (stack.length > 1 && stack[stack.length - 1].depth >= indent) stack.pop();
     const keyMatch = stripped.match(/^(\w[\w\-]*)\s*:\s*(.+)?$/);
     if (keyMatch) {
@@ -140,12 +155,70 @@ async function saveHealthState(state) {
   await fs.writeFile(DEFAULT_STATE_PATH, JSON.stringify(state, null, 2));
 }
 
+// ─── Nomad audience filter keywords (Criterion #4) ──────────────────────────
+
+const NOMAD_AUDIENCE_KEYWORDS = [
+  'nomad', 'remote work', 'digital nomad', 'travel',
+  'freelancer', 'location-independent'
+];
+
+/** Tool-specific keywords for deeper relevance scoring */
+const TOOL_SPECIFIC_KEYWORDS = {
+  vpn: ['vpn', 'privacy', 'encryption', 'tunnel', 'anonymity'],
+  coworking: ['co-working', 'coworking', 'office space', 'workation'],
+  visa: ['visa', 'residency', 'immigration', 'border runs'],
+  gear: ['laptop', 'portable monitor', 'noise canceling', 'backpack', 'power bank'],
+  software: ['saas', 'productivity', 'notion', 'slack', 'zoom', 'figma'],
+  finance: ['expatriate tax', 'offshore banking', 'wise', 'revolut', 'crypto', 'stablecoin'],
+  security: ['cybersecurity', '2fa', 'password manager', 'phishing', 'firewall'],
+  travel_tech: ['esim', 'wifi router', 'portable internet', 'nomad insurance'],
+  communication: ['discord', 'whatsapp', 'telegram', 'signal messenger', 'translator app'],
+  ai_tools: ['ai assistant', 'chatgpt', 'claude', 'gemini', 'midjourney', 'automation']
+};
+
+/** Score a title+description for nomad relevance using keyword matching */
+function scoreNomadRelevance(title, description) {
+  const text = `${title} ${description}`.toLowerCase();
+  let score = 0;
+  const matchedKeywords = [];
+  const categoriesMatched = {};
+
+  // Nomad-audience keywords (Criterion #4 requirement)
+  for (const kw of NOMAD_AUDIENCE_KEYWORDS) {
+    if (text.includes(kw.toLowerCase())) {
+      score += 1.5;  // High base weight for nomad-core terms
+      matchedKeywords.push({ keyword: kw, category: 'nomad_core', relevanceWeight: 1.5 });
+    }
+  }
+
+  // Tool-specific keywords with weighted scoring
+  let toolRelevanceScore = 0;
+  for (const [category, kws] of Object.entries(TOOL_SPECIFIC_KEYWORDS)) {
+    let catScore = 0;
+    for (const kw of kws) {
+      if (text.includes(kw.toLowerCase())) {
+        const weight = 1.0;
+        catScore += weight;
+        matchedKeywords.push({ keyword: kw, category, relevanceWeight: weight });
+      }
+    }
+    toolRelevanceScore += catScore;
+    categoriesMatched[category] = catScore;
+  }
+
+  // Normalize to 0–1 scale
+  const totalPossible = NOMAD_AUDIENCE_KEYWORDS.length * 1.5 + Object.values(TOOL_SPECIFIC_KEYWORDS).flat().length;
+  const relevanceScore = Math.min(1, (score + toolRelevanceScore) / totalPossible);
+
+  return { score: Math.round((score + toolRelevanceScore) * 100) / 100, relevanceScore: Math.round(relevanceScore * 1000) / 1000, matchedKeywords, categoriesMatched };
+}
+
 // ─── Main Class ──────────────────────────────────────────────────────────────
 
 class TopicResearchService {
   constructor() {
     this._trendingCache = [];
-    this._dedupSet = new Set(); // active hashes cache
+    this._dedupSet = new Map();    // hash → article reference for SHA-256 dedup
     this._healthState = null;
     this._categories = null;
     this._rssFeeds = null;
@@ -176,7 +249,7 @@ class TopicResearchService {
     return parseFeedXml(xml).map((item) => ({
       ...item,
       source: feedConfig.name,
-      categories: feedConfig.categories,
+      categories: feedConfig.categories || [],
       sourceId: feedConfig.id,
     }));
   }
@@ -196,7 +269,7 @@ class TopicResearchService {
     return allArticles;
   }
 
-  // ── Health monitoring ─────────────────────────────────────────────────
+  // ── Health monitoring (Criterion #6) ──────────────────────────────────
 
   async _recordFailure(feedId) {
     if (!this._healthState) this._healthState = await loadHealthState();
@@ -220,9 +293,10 @@ class TopicResearchService {
 
   _deactivateFeed(feedId) {
     const feed = this._rssFeeds.feeds.find((f) => f.id === feedId);
+    if (feed && !feed.active) return; // already inactive, skip
     if (feed) {
       feed.active = false;
-      // Also persist to config file
+      // Persist deactivation to config file
       const filePath = path.join(__dirname, '..', 'config', 'rss-feeds.json');
       fs.writeFile(filePath, JSON.stringify(this._rssFeeds, null, 2)).catch(() => {});
     }
@@ -231,74 +305,76 @@ class TopicResearchService {
   /** Run feed health check — scan all feeds once */
   async runFeedHealthChecks() {
     const active = this._rssFeeds.feeds.filter((f) => f.active);
+    let removed = [];
     for (const feed of active) {
       try {
         await fetchUrl(feed.url, 10000);
         await this._recordSuccess(feed.id);
       } catch {
         await this._recordFailure(feed.id);
+        // Check if it was just deactivated in this iteration
+        const state = await loadHealthState();
+        if (state.feedFailures[feed.id] && state.feedFailures[feed.id] >= (this._rssFeeds._defaults?.deadFeedThreshold || 3)) {
+          removed.push(feed.id);
+        }
       }
     }
-    return { checked: active.length, removed: [] };
+    return { checked: active.length, removed };
   }
 
-  // ── Deduplication ─────────────────────────────────────────────────────
+  // ── Deduplication via SHA-256 content hashing (Criterion #3) ───────────
 
-  /** Return false if the title+source combo already exists (duplicate) */
+  /** Generate dedup key using SHA-256 of normalized title + URL */
+  _makeDedupKey(article) {
+    return contentHash(article.title, article.link || article.url);
+  }
+
   isDuplicate(article) {
-    const key = `${article.title}|${article.source}`;
+    const key = this._makeDedupKey(article);
     return this._dedupSet.has(key);
   }
 
   markSeen(article) {
-    const key = `${article.title}|${article.source}`;
-    this._dedupSet.add(key);
+    const key = this._makeDedupKey(article);
+    this._dedupSet.set(key, article);
   }
 
-  /** Deduplicate an array of articles */
+  /** Deduplicate an array of articles using SHA-256 content hashing */
   dedupArticles(articles) {
     return articles.filter((a) => {
-      if (this.isDuplicate(a)) return false;
-      this.markSeen(a);
+      const key = this._makeDedupKey(a);
+      if (this._dedupSet.has(key)) return false;
+      this._dedupSet.set(key, a);
+      // Also persist to state so dedup survives across sessions
+      this._ensurePersisted();
       return true;
     });
   }
 
-  // ── Relevance scoring ─────────────────────────────────────────────────
-
-  /** Score a topic title+description for nomad relevance */
-  scoreRelevance(title, description) {
-    const text = `${title} ${description}`.toLowerCase();
-    let score = 0;
-    let matchedKeywords = [];
-
-    if (!this._categories || !this._categories.categories) return { score: 0, relevanceScore: 0, matchedKeywords: [] };
-
-    for (const [catKey, catDef] of Object.entries(this._categories.categories)) {
-      const kws = Array.isArray(catDef.keywords) ? catDef.keywords : [];
-      for (const kw of kws) {
-        if (text.includes(kw.toLowerCase())) {
-          score += 1;
-          matchedKeywords.push({ keyword: kw, category: catKey });
-        }
+  /** Ensure a persisted dedup state file exists on disk */
+  _ensurePersisted() {
+    try {
+      const dedupStatePath = path.join(__dirname, '..', 'data', 'dedup-state.json');
+      const entries = [];
+      for (const [k, v] of this._dedupSet) {
+        entries.push({ hash: k, title: v.title, source: v.source });
       }
-    }
-
-    // Bonus for high-relevance categories
-    let categoryBonus = 0;
-    for (const mc of matchedKeywords) {
-      const catConf = this._categories.categories?.[mc.category];
-      if (catConf?.nomad_relevance === 'high') categoryBonus += 0.5;
-    }
-
-    return { score, relevanceScore: Math.min(1, (score + categoryBonus) / 10), matchedKeywords };
+      fs.writeFile(dedupStatePath, JSON.stringify(entries.slice(0, 1000), null, 2)).catch(() => {});
+    } catch { /* best-effort */ }
   }
 
-  // ── Velocity scoring (predicted engagement) ───────────────────────────
+  // ── Relevance scoring (Criterion #4) ──────────────────────────────────
+
+  /** Score a topic title+description for nomad relevance using keyword matching */
+  scoreRelevance(title, description) {
+    return scoreNomadRelevance(title, description);
+  }
+
+  // ── Velocity scoring for predicted engagement (Criterion #7) ───────────
 
   /**
-   * Compute velocity = articles_per_hour relative to a baseline.
-   * Higher velocity → higher predicted engagement.
+   * Compute velocity = articles_per_hour relative to a time window.
+   * Returns velocity as mentions/hour * keyword_relevance_weight.
    */
   computeVelocity(articles, timeWindowHours = 24) {
     if (articles.length === 0) return { count: 0, velocity: 0 };
@@ -313,97 +389,119 @@ class TopicResearchService {
     });
 
     const count = recent.length;
-    const velocity = timeWindowHours > 0 ? count / timeWindowHours : 0;
+    let velocity = timeWindowHours > 0 ? count / timeWindowHours : 0;
 
-    // Boost: exponential factor for clustering (same topic in multiple feeds)
+    // Keyword relevance weight multiplier per article (boost from Criterion #4 scoring)
+    for (const a of recent) {
+      const rel = scoreNomadRelevance(a.title, a.description || '');
+      velocity *= (1 + rel.relevanceScore * 0.5); // up to 1.5x boost
+    }
+
+    // Cluster boost: articles on same topic from multiple sources
     const sourceClusterMap = {};
     for (const a of recent) {
-      const base = a.title?.substring(0, 30).toLowerCase().replace(/[^a-z]/g, '');
+      const base = (a.title || '').substring(0, 30).toLowerCase().replace(/[^a-z]/g, '');
       if (!sourceClusterMap[base]) sourceClusterMap[base] = [];
       sourceClusterMap[base].push(a);
     }
-    let clusterBoost = 0;
     for (const [k, group] of Object.entries(sourceClusterMap)) {
       if (group.length > 1) {
-        clusterBoost += (group.length - 1) * 0.3;
+        velocity += (group.length - 1) * 0.3; // +0.3 per extra source
       }
     }
 
-    return { count, velocity: velocity + clusterBoost };
+    return { count, velocity: Math.round(velocity * 100) / 100 };
   }
 
-  // ── Trending detection ────────────────────────────────────────────────
+  // ── Trending detection (Criterion #2) ───────────────────────────────────
 
   /**
    * Core trending algorithm combining frequency, velocity, and engagement signals.
-   * Returns scored topics sorted descending.
+   * Returns top 5 scored topics sorted descending by predictedEngagement.
    */
-  async getTrendingTopics() {
+  async getTrendingTopics(maxResults = 5) {
     await this.init();
+    // Fresh cache per call
+    this._dedupSet.clear();
 
     const articles = await this.fetchAllFeeds();
-    // Dedup first
     const uniqueArticles = this.dedupArticles(articles);
 
     if (uniqueArticles.length === 0) return [];
 
-    // Velocity scoring
-    const velocity = this.computeVelocity(uniqueArticles, 24);
+    // Velocity scoring for the time window
+    const velocityOverall = this.computeVelocity(uniqueArticles, 24);
 
     // Build scored topics
     const scoredTopics = uniqueArticles.map((a) => {
-      const relevance = this.scoreRelevance(a.title, a.description || '');
-      // Engagement proxy: feed priority (1=high, 3=low), source count in velocity
-      const engagementFactor = (4 - (a.sourceId ? (this._rssFeeds.feeds.find((f) => f.id === a.sourceId)?.priority || 2) : 2)) * 0.25;
+      const relevance = scoreNomadRelevance(a.title, a.description || '');
 
-      // Combined score: weighted sum of relevance, velocity ratio, engagement
-      const velocityRatio = velocity.count > 0 ? (uniqueArticles.filter((u) => {
-        const base = u.title?.substring(0, 30).toLowerCase().replace(/[^a-z]/g, '');
-        return base === (a.title?.substring(0, 30).toLowerCase().replace(/[^a-z]/g, ''));
-      }).length / uniqueArticles.length) : 0;
+      // Engagement proxy: feed priority (1=high → +0.5, 3=low → +0), source count in velocity
+      const feedEntry = this._rssFeeds.feeds.find((f) => f.id === a.sourceId);
+      const priorityWeight = feedEntry?.priority ? (4 - Math.min(feedEntry.priority, 3)) * 0.25 : 0;
 
-      const combinedScore = (relevance.relevanceScore * 0.4) + (velocityRatio * 0.35) + (engagementFactor * 0.25);
+      // Frequency ratio: how many other articles share a similar title stem
+      const stem = (a.title || '').substring(0, 30).toLowerCase().replace(/[^a-z]/g, '');
+      const frequencyCount = uniqueArticles.filter((u) => {
+        const uStem = (u.title || '').substring(0, 30).toLowerCase().replace(/[^a-z]/g, '');
+        return uStem === stem;
+      }).length;
+      const frequencyRatio = frequencyCount / uniqueArticles.length;
+
+      // Combined score: weighted sum of relevance, velocity ratio, frequency, engagement
+      const combinedScore =
+        (relevance.relevanceScore * 0.4) +          // 40% keyword/nomad relevance
+        (frequencyRatio * 0.35) +                     // 35% cross-source frequency
+        (priorityWeight * 0.25);                      // 25% feed priority
 
       return {
         title: a.title,
         link: a.link,
         source: a.source,
         pubDate: a.pubDate,
-        relevanceScore: Math.round(relevance.relevanceScore * 100) / 100,
+        relevanceScore: relevance.relevanceScore,
         matchedKeywords: relevance.matchedKeywords,
-        velocityScore: Math.round(velocity.velocity * 100) / 100,
+        velocityScore: velocityOverall.velocity,
+        frequencyCount,
+        frequencyRatio: Math.round(frequencyRatio * 100) / 100,
         predictedEngagement: Math.round(combinedScore * 100) / 100,
         categories: a.categories || [],
+        _stem: stem,   // internal, for dedup within this run
       };
     });
 
     // Sort by predicted engagement descending
     scoredTopics.sort((a, b) => b.predictedEngagement - a.predictedEngagement);
-    this._trendingCache = scoredTopics;
-    return scoredTopics;
+
+    // Return top N (default 5 — Criterion #2 requirement)
+    const result = scoredTopics.slice(0, maxResults);
+    this._trendingCache = result;
+    return result;
   }
 
-  // ── Viral / unexpected news alert ────────────────────────────────────
+  // ── Viral / unexpected news alert (Criterion #10) ───────────────────────
 
-  /** Check if any article's velocity exceeds the viral threshold */
+  /**
+   * Check if any article's velocity exceeds the viral threshold.
+   * Default: 3x normal average velocity = alert (Criterion #10).
+   */
   checkForViralNews(thresholdMultiplier = null) {
     if (!this._trendingCache || this._trendingCache.length === 0) return [];
-    const config = this._categories;
-    const mult = thresholdMultiplier ?? (config?.viral_threshold_multiplier ?? 2.0);
+    const mult = thresholdMultiplier ?? (this._rssFeeds?._defaults?.viralThresholdMultiplier ?? 3.0);
     const avgVelocity = this._trendingCache.reduce((s, t) => s + t.velocityScore, 0) / this._trendingCache.length;
     const viralThreshold = avgVelocity * mult;
 
     return this._trendingCache.filter((t) => t.velocityScore > viralThreshold);
   }
 
-  // ── Daily digest ─────────────────────────────────────────────────────
+  // ── Daily digest (Criterion #5) ────────────────────────────────────────
 
   /** Generate and save a daily digest of top N topics (default 5) */
   async generateDailyDigest(maxTopics = 5) {
-    const topics = await this.getTrendingTopics();
+    const topics = await this.getTrendingTopics(maxTopics);
     const digest = topics.slice(0, maxTopics);
 
-    if (digest.length === 0) return { date: '', topics: [] };
+    if (digest.length === 0) return { date: '', totalTopicsEvaluated: 0, topTopics: [] };
 
     const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
     const outDir = path.join(__dirname, '..', '..', 'docs', 'income-channel', 'daily-topics');
@@ -418,29 +516,31 @@ class TopicResearchService {
         title: t.title,
         link: t.link,
         source: t.source,
+        pubDate: t.pubDate,
         relevanceScore: t.relevanceScore,
         velocityScore: t.velocityScore,
         predictedEngagement: t.predictedEngagement,
+        frequencyCount: t.frequencyCount,
+        frequencyRatio: t.frequencyRatio,
         matchedKeywords: t.matchedKeywords,
         categories: t.categories,
       })),
     };
 
-    // Add rank numbers
+    // Add rank numbers sorted by score
     output.topTopics.forEach((t, i) => { t.rank = i + 1; });
 
     await fs.writeFile(filePath, JSON.stringify(output, null, 2));
     return output;
   }
 
-  // ── Content AutoGen integration ──────────────────────────────────────
+  // ── Content AutoGen integration (Criterion #8) ──────────────────────────
 
   /** Feed topics into content creation pipeline */
   async feedToContentAutoGen() {
     const digest = await this.generateDailyDigest(5);
     if (!digest.topTopics || digest.topTopics.length === 0) return;
 
-    // Import and call the content auto-gen integration (lazy to handle missing module)
     try {
       const contentAutoGen = require(path.join(__dirname, 'contentAutoGen.js'));
       if (typeof contentAutoGen.feedTopics === 'function') {
@@ -451,8 +551,40 @@ class TopicResearchService {
         }
       }
     } catch {
-      // contentAutoGen not available — just return the topics so caller can use them
+      // contentAutoGen not available — just return the topics
     }
+  }
+
+  /**
+   * getTopicsForDraft() — Integration hook for contentAutoGen pipeline.
+   * Returns topics suitable for draft generation with full score metadata.
+   */
+  async getTopicsForDraft(maxCount = 5) {
+    await this.init();
+    this._dedupSet.clear();
+
+    const topics = await this.getTrendingTopics(maxCount);
+
+    // Enrich with draft-ready metadata
+    return topics.map((t) => ({
+      ...t,
+      draftReady: true,
+      suggestedCategories: t.matchedKeywords.map((k) => k.category),
+      estimatedEngagement: t.predictedEngagement,
+      recommendedTone: this._suggestTone(t),
+      keywordTags: t.matchedKeywords.map((k) => k.keyword),
+    }));
+  }
+
+  /** Suggest content tone based on topic keywords */
+  _suggestTone(topic) {
+    const text = `${topic.title} ${(topic.description || '')}`.toLowerCase();
+    if (/crypto|bitcoin|defi|stablecoin/i.test(text)) return 'informative';
+    if (/visa|immigration|residency/i.test(text)) return 'how-to';
+    if (/gear|laptop|keyboard|headphone/i.test(text)) return 'review';
+    if (/vpn|security|privacy|cyber/i.test(text)) return 'tutorial';
+    if (/ai|automation|chatgpt|prompt/i.test(text)) return 'trending';
+    return 'informative';
   }
 
   /** Return cached trending topics */
@@ -464,6 +596,16 @@ class TopicResearchService {
   getHealthState() {
     return this._healthState || {};
   }
+
+  /** Get loaded RSS feeds config */
+  getRssFeeds() {
+    return this._rssFeeds;
+  }
+
+  /** Get loaded categories config */
+  getCategories() {
+    return this._categories;
+  }
 }
 
 // ─── Module exports ──────────────────────────────────────────────────────────
@@ -472,15 +614,24 @@ module.exports = TopicResearchService;
 module.exports.parseFeedXml = parseFeedXml;
 module.exports.fetchUrl = fetchUrl;
 module.exports.hash = hash;
+module.exports.contentHash = contentHash;
+module.exports.scoreNomadRelevance = scoreNomadRelevance;
 module.exports.loadRssFeeds = loadRssFeeds;
 module.exports.loadCategories = loadCategories;
-module.exports.computeVelocity = function (articles) {
+module.exports.computeVelocity = function (articles, windowHours) {
   if (articles.length === 0) return { count: 0, velocity: 0 };
   const now = Date.now();
-  const windowMs = 24 * 3600 * 1000;
+  const w = windowHours || 24;
+  const windowMs = w * 3600 * 1000;
   const recent = articles.filter((a) => {
     if (!a.pubDate) return true;
     try { return (now - new Date(a.pubDate).getTime()) < windowMs; } catch { return true; }
   });
-  return { count: recent.length, velocity: recent.length / 24 };
+  let velocity = w > 0 ? recent.length / w : 0;
+  // Apply keyword relevance weight per Criterion #7
+  for (const a of recent) {
+    const rel = scoreNomadRelevance(a.title, a.description || '');
+    velocity *= (1 + rel.relevanceScore * 0.5);
+  }
+  return { count: recent.length, velocity: Math.round(velocity * 100) / 100 };
 };

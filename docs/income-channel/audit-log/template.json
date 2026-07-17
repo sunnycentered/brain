@@ -1,0 +1,122 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Income Channel Auto-Post Audit Log Entry",
+  "description": "Schema for every post attempt recorded by the auto-posting cron system.",
+  "type": "object",
+  "required": ["timestamp", "postId", "topic", "contentHash", "deliveryStatus", "attempt", "region"],
+  "properties": {
+    "timestamp": {
+      "type": "string",
+      "format": "date-time",
+      "description": "ISO 8601 UTC timestamp of the attempt"
+    },
+    "postId": {
+      "type": "integer",
+      "description": "Unique post queue ID assigned on enqueue"
+    },
+    "topic": {
+      "type": "string",
+      "description": "Topic slug (e.g., 'vpn-tools', 'co-working')"
+    },
+    "contentHash": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$",
+      "description": "SHA-256 hex digest of the post content payload"
+    },
+    "payloadPreview": {
+      "type": "string",
+      "maxLength": 200,
+      "description": "First 200 chars of the payload for quick inspection"
+    },
+    "deliveryStatus": {
+      "type": "string",
+      "enum": [
+        "enqueued",
+        "delivered",
+        "failed",
+        "skipped_duplicate",
+        "skipped_diversity",
+        "rate_limited",
+        "retrying"
+      ],
+      "description": "Outcome of this attempt"
+    },
+    "attempt": {
+      "type": "integer",
+      "description": "Attempt number (1-based). 0 means pre-delivery check result."
+    },
+    "maxAttempts": {
+      "type": "integer",
+      "default": 3,
+      "description": "Configured maximum retry attempts"
+    },
+    "region": {
+      "type": "string",
+      "enum": ["NA", "EU", "APAC"],
+      "description": "Target region for this post"
+    },
+    "session": {
+      "type": "string",
+      "description": "Cron session ID (morning, midday, evening)"
+    },
+    "msgId": {
+      "type": ["integer", "null"],
+      "description": "Telegram message ID if delivered successfully"
+    },
+    "error": {
+      "type": ["string", "null"],
+      "description": "Error message if delivery failed"
+    },
+    "durationMs": {
+      "type": ["integer", "null"],
+      "description": "Time from enqueue to this attempt's completion (ms)"
+    },
+    "metadata": {
+      "type": ["object", "null"],
+      "description": "Extra contextual metadata (channel, tags, campaign)"
+    }
+  },
+  "examples": [
+    {
+      "timestamp": "2026-07-16T08:00:01.234Z",
+      "postId": 42,
+      "topic": "vpn-tools",
+      "contentHash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "payloadPreview": "Best VPN for Digital Nomads 2024 — Stay safe on public WiFi...",
+      "deliveryStatus": "delivered",
+      "attempt": 1,
+      "maxAttempts": 3,
+      "region": "NA",
+      "session": "morning",
+      "msgId": 1847293,
+      "error": null,
+      "durationMs": 342,
+      "metadata": { "campaign": "q3-nomad-tools" }
+    },
+    {
+      "timestamp": "2026-07-16T14:00:05.891Z",
+      "postId": 42,
+      "topic": "vpn-tools",
+      "contentHash": "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2",
+      "deliveryStatus": "skipped_duplicate",
+      "attempt": 0,
+      "region": "EU",
+      "session": "midday",
+      "msgId": null,
+      "error": "Content already posted within dedup window"
+    },
+    {
+      "timestamp": "2026-07-16T14:00:32.100Z",
+      "postId": 51,
+      "topic": "co-working",
+      "contentHash": "deadbeef1234567890abcdef1234567890abcdef1234567890abcdef12345678",
+      "deliveryStatus": "failed",
+      "attempt": 1,
+      "maxAttempts": 3,
+      "region": "EU",
+      "session": "midday",
+      "msgId": null,
+      "error": "Telegram API returned 429: Too Many Requests"
+    }
+  ]
+}

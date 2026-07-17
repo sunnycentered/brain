@@ -105,7 +105,8 @@ function getWeekKey(date = new Date()) {
 async function checkTopicLimit(topic) {
   const key = getWeekKey();
   const currentCount = (topicCounts[key] && topicCounts[key][topic]) || 0;
-  const config = require('./autoPostCron').getDiversityConfig();
+  const autoPost = require('../cron/autoPostCron');
+  const config = autoPost.getDiversityConfig();
   const divCfg = await config();
   const limit = divCfg?.max_per_topic_week || 2;
   return currentCount >= limit;
@@ -124,9 +125,9 @@ const rateLimitBucket = { tokens: 30, lastRefill: Date.now() };
 const MAX_TOKENS = 30; // Telegram API limit
 
 async function acquireRateToken() {
-  const rlConfig = require('./autoPostCron').getRateLimitConfig();
-  const cfg = await rlConfig();
-  const maxPerSec = cfg?.max_per_second || MAX_TOKENS;
+  const cfg = await autoPostCron.getRateLimitConfig();
+  const rl = await cfg();
+  const maxPerSec = rl?.max_per_second || MAX_TOKENS;
   const windowMs = cfg?.burst_window_ms || 1000;
 
   // Refill tokens
@@ -150,8 +151,10 @@ async function acquireRateToken() {
 
 // ── Retry logic (exponential backoff) ───────────────────────────────────────────
 
+const autoPostCron = require('../cron/autoPostCron');
+
 async function getRetryConfig() {
-  const rc = require('./autoPostCron').getRetryConfig();
+  const rc = autoPostCron.getRetryConfig();
   return await rc();
 }
 
