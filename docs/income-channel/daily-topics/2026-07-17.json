@@ -1,0 +1,18 @@
+{
+  "date": "2026-07-17",
+  "totalTopicsEvaluated": 1,
+  "topTopics": [
+    {
+      "rank": 1,
+      "title": "Test topic",
+      "source": "F1",
+      "relevanceScore": 0,
+      "velocityScore": 0.04,
+      "predictedEngagement": 0.48,
+      "matchedKeywords": [],
+      "categories": [
+        "Visas"
+      ]
+    }
+  ]
+}

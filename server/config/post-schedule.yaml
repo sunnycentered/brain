@@ -1,0 +1,48 @@
+# post-schedule.yaml — Timezone-aware posting schedule for the Income Channel auto-posting cron system.
+# All times are in UTC. Local offsets are computed per-region below.
+
+timezone:
+  default: UTC
+  regions:
+    NA: "America/Los_Angeles"   # Pacific (primary audience)
+    EU: "Europe/London"          # GMT/BST
+    APAC: "Asia/Tokyo"           # JST
+
+schedule:
+  sessions:
+    - id: morning
+      utc: "08:00"              # 01:00 PDT / 09:00 BST / 17:00 JST
+      enabled: true
+      label: "Morning (NA primetime)"
+
+    - id: midday
+      utc: "14:00"              # 07:00 PDT / 15:00 BST / 23:00 JST
+      enabled: true
+      label: "Midday (EU primetime)"
+
+    - id: evening
+      utc: "20:00"              # 13:00 PDT / 21:00 BST / 05:00+1 JST
+      enabled: true
+      label: "Evening (global overlap)"
+
+post_limits:
+  max_per_session: 3           # posts per cron tick
+  max_per_day: 9               # total daily cap
+  min_spacing_seconds: 2       # inter-post gap (below Telegram rate window)
+
+rate_limit:
+  max_per_second: 30           # Telegram Bot API hard limit
+  burst_window_ms: 1000        # sliding-window bucket
+
+retry:
+  max_attempts: 3
+  backoff_base_ms: 2000        # initial delay
+  backoff_multiplier: 2.5      # exponential factor
+  jitter_max_ms: 500           # random jitter to avoid thundering-herd
+
+deduplication:
+  hash_algorithm: "sha256"
+  retention_hours: 168         # 7 days — topic diversity window
+
+diversity:
+  max_per_topic_week: 2        # no more than N posts on same topic per calendar week
