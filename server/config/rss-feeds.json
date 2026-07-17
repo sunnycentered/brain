@@ -1,0 +1,13 @@
+{
+  "feeds": [
+    {
+      "id": "dead-feed",
+      "active": false,
+      "name": "Dead Feed",
+      "url": "https://example.com/dead"
+    }
+  ],
+  "_defaults": {
+    "deadFeedThreshold": 3
+  }
+}

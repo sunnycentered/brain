@@ -1,0 +1,184 @@
+categories:
+  vpn_tools:
+    name: "VPN Tools"
+    keywords:
+      - VPN
+      - Virtual Private Network
+      - WireGuard
+      - OpenVPN
+      - Mullvad
+      - ProtonVPN
+      - ExpressVPN
+      - NordVPN
+      - hide.my.ip
+      - privacy
+      - encryption
+      - tunnel
+      - anonymity
+    nomad_relevance: high
+
+  co_working:
+    name: "Co-Working"
+    keywords:
+      - co-working
+      - co working
+      - WeWork
+      - Industrious
+      - Serendipity Labs
+      - Hive
+      - IWG
+      - Regus
+      - workation
+      - digital nomad hub
+      - office space
+      - shared workspace
+      - coworking cafe
+    nomad_relevance: high
+
+  visas:
+    name: "Visas"
+    keywords:
+      - visa
+      - digital nomad visa
+      - remote work visa
+      - tourist visa
+      - Schengen
+      - ETIAS
+      - residency
+      - long-stay visa
+      - tax residency
+      - border runs
+      - embassy
+      - immigration
+    nomad_relevance: high
+
+  gear:
+    name: "Gear"
+    keywords:
+      - laptop
+      - portable monitor
+      - noise canceling
+      - headphones
+      - keyboard
+      - mouse
+      - backpack
+      - power bank
+      - USB-C hub
+      - dongle
+      - drone
+      - camera
+      - tripod
+      - portable charger
+    nomad_relevance: high
+
+  software:
+    name: "Software"
+    keywords:
+      - SaaS
+      - productivity
+      - Notion
+      - Trello
+      - Slack
+      - Zoom
+      - Google Workspace
+      - Figma
+      - VS Code
+      - terminal
+      - remote desktop
+      - SSH
+      - cloud storage
+      - backup
+    nomad_relevance: high
+
+  finance:
+    name: "Finance"
+    keywords:
+      - expatriate tax
+      - offshore banking
+      - Wise
+      - Revolut
+      - Payoneer
+      - crypto
+      - Bitcoin
+      - stablecoin
+      - income splitting
+      - LLC
+      - cost of living
+      - freelancer
+      - invoicing
+      - currency conversion
+    nomad_relevance: high
+
+  security:
+    name: "Security"
+    keywords:
+      - cybersecurity
+      - two factor
+      - 2FA
+      - password manager
+      - Bitwarden
+      - LastPass
+      - phishing
+      - data breach
+      - kill switch
+      - firewall
+      - antivirus
+      - zero trust
+      - privacy
+    nomad_relevance: high
+
+  travel_tech:
+    name: "Travel Tech"
+    keywords:
+      - eSIM
+      - Roamless
+      - Airalo
+      - Holafly
+      - Wi-Fi router
+      - portable internet
+      - travel app
+      - hotel booking
+      - flight comparison
+      - nomad insurance
+      - safety tip
+      - connectivity
+    nomad_relevance: high
+
+  communication:
+    name: "Communication"
+    keywords:
+      - Discord
+      - WhatsApp
+      - Telegram
+      - signal messenger
+      - video call
+      - language barrier
+      - translator app
+      - culture
+      - networking
+      - community
+      - meetups
+    nomad_relevance: medium
+
+  ai_tools:
+    name: "AI Tools"
+    keywords:
+      - AI assistant
+      - ChatGPT
+      - Claude
+      - Gemini
+      - Midjourney
+      - automation
+      - prompt
+      - LLM
+      - machine learning
+      - Copilot
+      - write
+      - design tool
+      - video generation
+      - transcription
+    nomad_relevance: high
+
+viral_threshold_multiplier: 2.0
+default_category_weight: 1.0
+max_daily_digest: 5

@@ -1,0 +1,212 @@
+# Product Integration Links — Telegram Channel & Bot
+
+**Date:** 2026-07-16  
+**Author:** Sun Centgered  
+**Purpose:** Document all product links for Telegram channel posts and bot /pricing command response.
+
+---
+
+## Telegram Bot: /pricing Command Response
+
+When a user sends `/pricing` to the bot, respond with this formatted message:
+
+```
+📚 Digital Nomad Tech Stack Starter Pack — Now Available!
+
+The complete guide to setting up every tool you need to work from anywhere. VPN, internet, banking, productivity, security — all curated + real discounts saving $200+/year.
+
+Three tiers available:
+
+💰 Basic ($19)
+   • Full PDF guide (35 pages)
+   • Instant setup in 45 min
+   ➜ https://gumroad.com/l/nomad-basic
+
+⭐ Premium ($39) — Most Popular
+   • PDF guide + Notion workspace template
+   • Tool tracker, budget & workflow databases
+   • Email support included
+   ➜ https://gumroad.com/l/nomad-premium
+
+🔥 Bundle ($59) — Best Value
+   • Everything above + Discord community
+   • Lifetime updates + annual tool refresh
+   • Priority support
+   ➜ https://gumroad.com/l/nomad-bundle
+
+🎁 Free preview: https://gumroad.com/l/nomad-preview
+
+30-day money-back guarantee on all tiers. Questions? Just ask! 🌍✨
+```
+
+### /pricing Command Handler (Pseudocode)
+
+```javascript
+// In your Telegram bot handler (e.g., server/services/telegramBot.js)
+function handlePricingCommand(chatId, message) {
+  const response = `📚 Digital Nomad Tech Stack Starter Pack...`; // full text above
+  bot.sendMessage(chatId, response, { parse_mode: 'HTML' });
+}
+
+// Register handler
+bot.onText(/\/pricing/, (msg) => handlePricingCommand(msg.chat.id, msg));
+```
+
+---
+
+## Telegram Channel Post Templates
+
+### Announcement Post (Launch Day)
+
+```
+🚀 New Digital Product: Tech Stack Starter Pack! 🌍
+
+Tired of scattered tool recommendations and overpaying for internet, VPNs, and banking?
+
+I just launched the first all-in-one nomad tech stack guide — tested across 12 countries, covering every tool you actually need.
+
+✅ 35-page PDF with step-by-step setup
+✅ Notion template (tool tracker + budget + workflow)
+✅ Real discount links saving $200+/year
+✅ 3 tiers: $19 / $39 / $59
+✅ 30-day money-back guarantee
+
+Preview the first 3 pages free → https://gumroad.com/l/nomad-preview
+
+Best tier for most people: Premium ($39) — you get everything that matters.
+Check out all options here → https://gumroad.com/l/nomad-starter-pack
+
+👇 Drop a question if you have one!
+```
+
+### Weekly Feature Post (Rotating Tool Spotlight)
+
+```
+💡 Tool of the Week: Airalo eSIMs
+
+Why nomads love it:
+• 193+ countries covered
+• Plans from $1.50 for regional packs
+• No physical SIM swaps — install in 60 seconds
+• Top up anytime without changing your number
+
+If you're traveling to Southeast Asia, grab the Asia regional pack → https://www.airalo.com/?referral=YOUR_CODE
+
+Full eSIM setup guide + comparison with NomadX & Ubigi in our Starter Pack PDF (Premium & Bundle tiers).
+
+👉 Get the full guide: https://gumroad.com/l/nomad-premium
+```
+
+### Savings Roundup Post (Monthly)
+
+```
+💰 Nomad Savings Roundup — This Month's Top Deals
+
+Using tools from our Tech Stack Starter Pack, here's what members saved this month:
+
+• ExpressVPN discount → $75/year saved per person
+• Wise transfers vs traditional bank → avg $300+/year per person
+• Airalo eSIM regional plans → 15% off retail pricing
+• NomadX coworking → $91/month savings vs daily pass rates
+
+Total average savings for Starter Pack buyers: ~$420/year just from the tool discounts alone. 
+
+The guide costs $39 but pays for itself in less than a month. 😄
+
+Grab it here → https://gumroad.com/l/nomad-premium
+
+(Premium tier recommended — PDF + Notion template is the sweet spot.)
+```
+
+---
+
+## Product Link Shortcuts
+
+| Asset | Full URL | Short Alias (Telegram) |
+|-------|----------|----------------------|
+| **Gumroad Main Page** | `https://gumroad.com/l/nomad-starter-pack` | `/buy` or `/shop` |
+| **Basic Tier ($19)** | `https://gumroad.com/l/nomad-basic` | `/basic` |
+| **Premium Tier ($39)** | `https://gumroad.com/l/nomad-premium` | `/premium` |
+| **Bundle Tier ($59)** | `https://gumroad.com/l/nomad-bundle` | `/bundle` |
+| **Preview (Free)** | `https://gumroad.com/l/nomad-preview` | `/preview` |
+| **Notion Template** | `https://notion.so/template/...` | Link in delivery email only |
+
+### Telegram Bot Commands Related to Product:
+
+| Command | Response |
+|---------|----------|
+| `/pricing` | Full pricing tiers + links (formatted message above) |
+| `/buy` | Direct link to Gumroad product page |
+| `/preview` | "Check the preview on Gumroad! → [link]" |
+| `/tools` | List of 5 tools from the Starter Pack with discount links |
+| `/savings` | Quick savings calculator showing $200+/year potential |
+
+---
+
+## Integration Notes for Bot Code
+
+In `server/services/productAnalytics.js`:
+
+```javascript
+// Track Telegram bot interactions with the product
+async function trackTelegramCommand(command, chatId, userId) {
+  await logEvent({
+    type: 'telegram_command',
+    command,          // '/pricing', '/buy', etc.
+    chatId,
+    userId,
+    timestamp: Date.now(),
+    source: 'telegram_bot'
+  });
+  
+  if (['/buy', '/premium', '/bundle', '/basic'].includes(command)) {
+    trackConversion({ command, chatId, userId });
+  }
+}
+
+// Track Gumroad conversion events
+async function trackGumroadConversion(productId, tier, amount) {
+  await logEvent({
+    type: 'gumroad_purchase',
+    productId: 'nomad-starter-pack',
+    tier,
+    amount,
+    timestamp: Date.now()
+  });
+}
+
+// Track PDF views and downloads
+async function trackProductViews(pageViews, uniqueVisitors) {
+  await logEvent({
+    type: 'product_page_views',
+    pageViews,
+    uniqueVisitors,
+    timestamp: Date.now()
+  });
+}
+
+// Track refund events
+async function trackRefund(productId, reason) {
+  await logEvent({
+    type: 'gumroad_refund',
+    productId,
+    reason,
+    timestamp: Date.now()
+  });
+}
+```
+
+---
+
+## Channel Posting Schedule
+
+| Day | Post Type | Source Document |
+|-----|-----------|-----------------|
+| Monday | Product announcement (launch) | sales-page.md highlights |
+| Wednesday | Tool spotlight (rotating) | PDF-GUIDE.md tool deep-dives |
+| Friday | Savings roundup / social proof | product-research.md savings data |
+| Sunday | Community Q&A / FAQ | FAQ from sales-page.md |
+
+---
+
+*© 2026 Digital Nomad Tech Stack Starter Pack by Sun Centgered.*
